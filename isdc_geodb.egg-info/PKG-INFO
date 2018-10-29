@@ -1,0 +1,54 @@
+Metadata-Version: 1.1
+Name: isdc-geodb
+Version: 0.1.dev0
+Summary: A mandatory Django app for ISDC. Process mapping data used by other modules.
+Home-page: https://www.example.com/
+Author: ASDC Dev
+Author-email: yourname@example.com
+License: BSD License
+Description: ========
+        APP_NAME
+        ========
+        
+        APP_DESC
+        
+        Mandatory Module for ASDC
+        
+        Quick start
+        -----------
+        
+        1. Add "APP_NAME" to your INSTALLED_APPS setting like this::
+        
+            INSTALLED_APPS = [
+                ...
+                'APP_NAME',
+            ]
+        
+            If necessary add "APP_NAME" in (check comment for description): 
+                DASHBOARD_PAGE_MODULES, 
+                GETRISKEXECUTEEXTERNAL_MODULES, 
+                QUICKOVERVIEW_MODULES, 
+                MAP_APPS_TO_DB_CUSTOM
+        
+            For development in virtualenv add APP_NAME_PARENT_DIR path to venv_name/bin/activate:
+                export PYTHONPATH=${PYTHONPATH}:\
+                ${HOME}/APP_NAME_PARENT_DIR
+        
+        2. Include the APP_NAME URLconf in geonode/urls.py like this::
+        
+            url('', include('APP_NAME.urls')),
+        
+        3. Run `python manage.py migrate APP_NAME` to create the APP_NAME models.
+        
+        
+Platform: UNKNOWN
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Django
+Classifier: Framework :: Django :: 1.8
+Classifier: Intended Audience :: Developers, End Users
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
