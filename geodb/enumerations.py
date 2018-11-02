@@ -182,4 +182,27 @@ DEPTH_TYPES_INVERSE = {v: k for k, v in DEPTH_TYPES.items()}
 
 AVA_LIKELIHOOD_INDEX = {1:'low', 2:'med', 3:'high'}
 AVA_LIKELIHOOD_TYPES = {'high':'High','med':'Medium','low':'Low'}
+AVA_LIKELIHOOD_INVERSE = {v: k for k, v in AVA_LIKELIHOOD_TYPES.items()}
 
+TIME_DISTANCE_TYPES = ['l1','l2','l3','l4','l5','l6','l7','l8','g8']
+
+EARTHQUAKE_TYPES = {
+    'weak': 'Weak',
+    'light': 'Light',
+    'moderate': 'Moderate',
+    'strong': 'Strong',
+    'verystrong': 'Very Strong',
+    'severe': 'Severe',
+    'violent': 'Violent',
+    'extreme': 'Extreme',    
+}
+EARTHQUAKE_TYPES_ORDER = ['weak','light','moderate','strong','verystrong','severe','violent','extreme']
+
+LANDSLIDE_TYPES = {
+    'very_low': 'Very Low',  
+    'low': 'Low',
+    'moderate': 'Moderate',
+    'high': 'High',
+    'very_high': 'Very High',
+}
+LANDSLIDE_TYPES_ORDER = ['very_low','low','moderate','high','very_high']

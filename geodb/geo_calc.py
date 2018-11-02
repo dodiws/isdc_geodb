@@ -221,7 +221,7 @@ def getRawBaseLine(filterLock, flag, code, includes=[], excludes=[]):
     return response
 
 def getQuickOverview(request, filterLock, flag, code, includes=[], excludes=[]):
-    response = {}
+    response = dict_ext()
     tempData = getShortCutData(flag,code)
     # response['Population']= tempData['Population']
     # response['Area']= tempData['Area']
@@ -244,8 +244,9 @@ def getQuickOverview(request, filterLock, flag, code, includes=[], excludes=[]):
         # add response from optional modules
         for modulename in settings.QUICKOVERVIEW_MODULES:
             module = importlib.import_module(modulename+'.views')
-            response_add = module.getQuickOverview(request, filterLock, flag, code)
-            response.update(response_add)
+            tpl, data = module.getQuickOverview(request, filterLock, flag, code)
+            response.path('quickoverview_templates')[modulename] = tpl
+            response.path('quickoverview_data')[modulename] = data
         
         # response.update(getFloodForecastMatrix(filterLock, flag, code, includes=['flashflood_forecast_risk_pop']))
         # response.update(getFloodForecast(request, filterLock, flag, code, excludes=['getCommonUse','detail']))
@@ -378,57 +379,56 @@ def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], injec
 
     if include_section(['pop_lc','area_lc','building_lc'], includes, excludes):
         if cached:
-            response = getShortCutDataFormatter(getShortCutData(flag, code))
+            cacheddata = getShortCutDataFormatter(getShortCutData(flag, code))
+            response = cacheddata['baseline']
 
             # separate query for building_lc because not cached
             counts = getRiskNumber(targetBase, filterLock, 'agg_simplified_description', None, None, 'area_buildings', flag, code, None)
 
             sliced = {c['agg_simplified_description']: c['houseatrisk'] for c in counts}
-            response['baseline']['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
+            response['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
             # response['building_total'] = sum(response['building_lc'].values()) # noqa, replace getTotalBuildings
 
         else:
             counts = getRiskNumber(targetBase, filterLock, 'agg_simplified_description', 'area_population', 'area_sqm', 'area_buildings', flag, code, None, settlField = 'vuid')
 
             sliced = {c['agg_simplified_description']: c['count'] for c in counts}
-            response.path('baseline')['pop_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
-            response.path('baseline')['pop_total'] = sum(response.path('baseline')['pop_lc'].values()) # noqa, replace getTotalPop
+            response['pop_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
+            response['pop_total'] = sum(response['pop_lc'].values()) # noqa, replace getTotalPop
 
             sliced = {c['agg_simplified_description']: c['areaatrisk'] for c in counts}
-            response.path('baseline')['area_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
-            response.path('baseline')['area_total'] = sum(response.path('baseline')['area_lc'].values()) # noqa, replace getTotalArea
+            response['area_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
+            response['area_total'] = sum(response['area_lc'].values()) # noqa, replace getTotalArea
 
             sliced = {c['agg_simplified_description']: c['houseatrisk'] for c in counts}
-            response.path('baseline')['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
-            response.path('baseline')['building_total'] = sum(response.path('baseline')['building_lc'].values()) # noqa, replace getTotalBuildings
+            response['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
+            response['building_total'] = sum(response['building_lc'].values()) # noqa, replace getTotalBuildings
 
             # exclude 'Water body and Marshland'
-            response.path('baseline')['settlement_total'] = len(set(c['settlatrisk'] for c in counts if c['agg_simplified_description'] not in ['Water body and Marshland']))
-            # response.path('baseline')['settlement_total'] = getTotalSettlement(filterLock, flag, code, targetBase) if not cached else cache_data['settlements']
+            response['settlement_total'] = len(set(c['settlatrisk'] for c in counts if c['agg_simplified_description'] not in ['Water body and Marshland']))
+            # response['settlement_total'] = getTotalSettlement(filterLock, flag, code, targetBase) if not cached else cache_data['settlements']
 
         for sub in ['pop','area','building']:
             for k,v in LANDCOVER_TYPES_GROUP.items():
-                response.path('baseline').path(sub+'_lc_group')[k] = sum([response.path('baseline')[sub+'_lc'].get(i) or 0 for i in v])
+                response.path(sub+'_lcgroup')[k] = sum([response[sub+'_lc'].get(i) or 0 for i in v])
 
-    # FIXME: if cached get from getProvinceAdditionalSummary 
     if include_section('healthfacility', includes, excludes):
         hltParentData = getParentHltFacRecap(filterLock, flag, code)
         sliced = {HEALTHFAC_TYPES_INVERSE[c['facility_types_description']]:c['numberhospital'] for c in hltParentData}
-        response.path('baseline')['healthfacility'] = {k:round(sliced.get(v) or 0, 0) for k,v in HEALTHFAC_TYPES.items()}
-        response.path('baseline')['healthfacility_total'] = sum(response.path('baseline')['healthfacility'].values())
+        response['healthfacility'] = {k:round(sliced.get(v) or 0, 0) for k,v in HEALTHFAC_TYPES.items()}
+        response['healthfacility_total'] = sum(response['healthfacility'].values())
 
-    # FIXME: if cached get from getProvinceAdditionalSummary 
     if include_section('road', includes, excludes):
         roadParentData = getParentRoadNetworkRecap(filterLock, flag, code)
         sliced = dict([(c['type_update'], c['road_length']) for c in roadParentData])
-        response.path('baseline')['road'] = {k:round(sliced.get(k) or 0, 0) for k in ROAD_TYPES}
-        response.path('baseline')['road_total'] = sum(response.path('baseline')['road'].values())
+        response['road'] = {k:round(sliced.get(k) or 0, 0) for k in ROAD_TYPES}
+        response['road_total'] = sum(response['road'].values())
 
     if include_section('adm_lc_child', includes, excludes):
-        response.path('baseline')['adm_lc_child'] = getProvinceSummary(filterLock, flag, code)
+        response['adm_lc_child'] = getProvinceSummary(filterLock, flag, code)
 
     if include_section('adm_hlt_road_child', includes, excludes):
-        response.path('baseline')['adm_hlt_road_child'] = getProvinceAdditionalSummary(filterLock, flag, code)
+        response['adm_hlt_road_child'] = getProvinceAdditionalSummary(filterLock, flag, code)
 
     return response
 
