@@ -74,6 +74,8 @@ from geodb.geo_calc import (
 	getBaseline,
 )
 
+from dashboard.views import dashboard_baseline
+
 # # for development only
 # from django.core.exceptions import ImproperlyConfigured
 # try:
@@ -281,22 +283,22 @@ class FloodRiskStatisticResource_ORIG(ModelResource):
 	#     return self.create_response(request, response)    
 
 def getBaselineStatistic(request,filterLock, flag, code, yy=None, mm=None, dd=None, rf_type=None, bring=None):
-	response = dict_ext()
-	# response['source'] = baseline = getBaseline(request, filterLock, flag, code, excludes=['adm_lc_child','adm_hlt_road_child'])
-	baseline = getBaseline(request, filterLock, flag, code, excludes=['adm_lc_child','adm_hlt_road_child'])['baseline']
-	response['panels'] = {k:{'title':v} for k,v in PANEL_TITLES.items()}
-	for i,j in {'pop':'pop_lc','area':'area_lc'}.items():
-		response.path('panels',i)['child'] = {k:{'value':baseline[j][v], 'title':LANDCOVER_TYPES[v]} for k,v in LANDCOVER_INDEX.items()}
-	for k,v in {'pop':'pop_total','area':'area_total','building':'building_total','settlement':'settlement_total','healthfacility':'healthfacility_total','road':'road_total'}.items():
-		response.path('panels',k)['total'] = baseline[v]
-	response.path('panels','healthfacility')['child'] = {k:{'value':baseline['healthfacility'][v], 'title':HEALTHFAC_TYPES[v]} for k,v in HEALTHFAC_INDEX.items()}
-	response.path('panels','road')['child'] = {k:{'value':baseline['road'][v], 'title':ROAD_TYPES[v]} for k,v in ROAD_INDEX.items()}
-	response['panels_list'] = [response['panels'][i] for i in ['pop','area','settlement','building','road','healthfacility']]
-	for v in response['panels_list']:
-		if 'child' in v:
-			v['child'] = v['child'].values()
-	# [{v['child']:v['child'].values()} for v in response['panels_list'] if 'child' in v]
-	return response
+	# response = dict_ext()
+	# baseline = getBaseline(request, filterLock, flag, code, excludes=['adm_lc_child','adm_hlt_road_child'])['baseline']
+	# response['panels'] = {k:{'title':v} for k,v in PANEL_TITLES.items()}
+	# for i,j in {'pop':'pop_lc','area':'area_lc'}.items():
+	# 	response.path('panels',i)['child'] = {k:{'value':baseline[j][v], 'title':LANDCOVER_TYPES[v]} for k,v in LANDCOVER_INDEX.items()}
+	# for k,v in {'pop':'pop_total','area':'area_total','building':'building_total','settlement':'settlement_total','healthfacility':'healthfacility_total','road':'road_total'}.items():
+	# 	response.path('panels',k)['total'] = baseline[v]
+	# response.path('panels','healthfacility')['child'] = {k:{'value':baseline['healthfacility'][v], 'title':HEALTHFAC_TYPES[v]} for k,v in HEALTHFAC_INDEX.items()}
+	# response.path('panels','road')['child'] = {k:{'value':baseline['road'][v], 'title':ROAD_TYPES[v]} for k,v in ROAD_INDEX.items()}
+	# response['panels_list'] = [response['panels'][i] for i in ['pop','area','settlement','building','road','healthfacility']]
+	# for v in response['panels_list']:
+	# 	if 'child' in v:
+	# 		v['child'] = v['child'].values()
+	response = dashboard_baseline(request, filterLock, flag, code, excludes=['getCommonUse','adm_lc_child','adm_hlt_road','GeoJson'])
+	
+	return response['panels']
 
 def getRiskExecuteExternal(filterLock, flag, code, yy=None, mm=None, dd=None, rf_type=None, bring=None):
 	date_params = yy and mm and dd

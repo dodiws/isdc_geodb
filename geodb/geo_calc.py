@@ -118,6 +118,7 @@ def getCommonUse(request,flag, code):
     # clusterPoints = AfgAdmbndaAdm1.objects.all()
     response['parent_label_dash']=[]
     if flag == 'entireAfg':
+        response['areatype']='nation'
         response['parent_label']=_('Afghanistan')
         response['parent_label_dash'].append({'name':_('Afghanistan'),'query':'','code':0})
         response['qlinks']=_('Select province')
@@ -132,6 +133,7 @@ def getCommonUse(request,flag, code):
             response['parent_label_dash'].append({'name':lblTMP[0].prov_na_en,'query':'&code='+str(code),'code':code})
             response['parent_label'] = lblTMP[0].prov_na_en
             response['qlinks']=_('Select district')
+            response['areatype']='province'
             resource = AfgAdmbndaAdm2.objects.all().values('dist_code','dist_na_en').filter(prov_code=code).order_by('dist_na_en')
             # clusterPoints = AfgAdmbndaAdm2.objects.all()
             for i in resource:
@@ -145,6 +147,7 @@ def getCommonUse(request,flag, code):
             response['parent_label_dash'].append({'name':lblTMP[0].dist_na_en,'query':'&code='+str(code),'code':code})
             response['parent_label'] = lblTMP[0].dist_na_en
             response['qlinks']=''
+            response['areatype']='district'
             for i in main_resource:
                 response['adm_prov'].append({'code':i['prov_code'],'name':i['prov_na_en']})
             resource = AfgAdmbndaAdm2.objects.all().values('dist_code','dist_na_en').filter(prov_code=lblTMP[0].prov_code).order_by('dist_na_en')
@@ -153,6 +156,7 @@ def getCommonUse(request,flag, code):
     else:
         response['parent_label_dash'].append({'name':_('Custom Selection'),'query':'','code':0})
         response['qlinks']=''
+        response['areatype']='custom'
 
     # response['poi_points'] = []
     # for i in clusterPoints:
@@ -429,6 +433,9 @@ def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], injec
 
     if include_section('adm_hlt_road_child', includes, excludes):
         response['adm_hlt_road_child'] = getProvinceAdditionalSummary(filterLock, flag, code)
+
+    if include_section('GeoJson', includes, excludes):
+        response['GeoJson'] = getGeoJson(request, flag, code)
 
     return response
 
