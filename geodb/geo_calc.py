@@ -428,11 +428,11 @@ def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], injec
         response['road'] = {k:round(sliced.get(k) or 0, 0) for k in ROAD_TYPES}
         response['road_total'] = sum(response['road'].values())
 
-    if include_section('adm_lc_child', includes, excludes):
-        response['adm_lc_child'] = getProvinceSummary(filterLock, flag, code)
+    if include_section('adm_lc', includes, excludes):
+        response['adm_lc'] = getProvinceSummary(filterLock, flag, code)
 
-    if include_section('adm_hlt_road_child', includes, excludes):
-        response['adm_hlt_road_child'] = getProvinceAdditionalSummary(filterLock, flag, code)
+    if include_section('adm_hlt_road', includes, excludes):
+        response['adm_hlt_road'] = getProvinceAdditionalSummary(filterLock, flag, code)
 
     if include_section('GeoJson', includes, excludes):
         response['GeoJson'] = getGeoJson(request, flag, code)
