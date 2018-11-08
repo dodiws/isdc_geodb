@@ -308,7 +308,7 @@ def getBaselineStatistic(request,filterLock, flag, code, yy=None, mm=None, dd=No
 		response['panels_list']['chart'].append(p)
 	response.path('panels_list')['tables'] = [{
 		'title':response_dashboard_baseline['panels'][i]['title'],
-		'child':[j['value'] for j in response_dashboard_baseline['panels'][i]['child']]
+		'child':[response_dashboard_baseline['panels'][i]['parentdata']]+[j['value'] for j in response_dashboard_baseline['panels'][i]['child']]
 	} for i in ['adm_lcgroup_pop_area','adm_healthfacility','adm_road']]
 	for k,v in {'pop':'pop_total','area':'area_total','building':'building_total','settlement':'settlement_total','healthfacility':'healthfacility_total','road':'road_total'}.items():
 		response.path('panels_list','total')[k] = response_dashboard_baseline['source'][v]
