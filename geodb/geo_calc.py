@@ -367,7 +367,7 @@ def getShortCutDataFormatter(dic):
 
     return response_tree
  
-def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], inject={'forward':False}, response=dict_ext()):
+def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], inject={'forward':False}, response=dict_ext(), baselineonly=True):
     targetBase = AfgLndcrva.objects.all()
 
     cached = flag in ['entireAfg','currentProvince']
@@ -383,170 +383,162 @@ def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], injec
 
     if include_section(['pop_lc','area_lc','building_lc'], includes, excludes):
         if cached:
-            cacheddata = getShortCutDataFormatter(getShortCutData(flag, code))
-            response = cacheddata['baseline']
+            response = getShortCutDataFormatter(getShortCutData(flag, code))
+            baseline = response['baseline']
 
             # separate query for building_lc because not cached
             counts = getRiskNumber(targetBase, filterLock, 'agg_simplified_description', None, None, 'area_buildings', flag, code, None)
 
             sliced = {c['agg_simplified_description']: c['houseatrisk'] for c in counts}
-            response['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
-            # response['building_total'] = sum(response['building_lc'].values()) # noqa, replace getTotalBuildings
+            baseline['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
+            # baseline['building_total'] = sum(baseline['building_lc'].values()) # noqa, replace getTotalBuildings
 
         else:
             counts = getRiskNumber(targetBase, filterLock, 'agg_simplified_description', 'area_population', 'area_sqm', 'area_buildings', flag, code, None, settlField = 'vuid')
 
             sliced = {c['agg_simplified_description']: c['count'] for c in counts}
-            response['pop_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
-            response['pop_total'] = sum(response['pop_lc'].values()) # noqa, replace getTotalPop
+            baseline['pop_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
+            baseline['pop_total'] = sum(baseline['pop_lc'].values()) # noqa, replace getTotalPop
 
             sliced = {c['agg_simplified_description']: c['areaatrisk'] for c in counts}
-            response['area_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
-            response['area_total'] = sum(response['area_lc'].values()) # noqa, replace getTotalArea
+            baseline['area_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
+            baseline['area_total'] = sum(baseline['area_lc'].values()) # noqa, replace getTotalArea
 
             sliced = {c['agg_simplified_description']: c['houseatrisk'] for c in counts}
-            response['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
-            response['building_total'] = sum(response['building_lc'].values()) # noqa, replace getTotalBuildings
+            baseline['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
+            baseline['building_total'] = sum(baseline['building_lc'].values()) # noqa, replace getTotalBuildings
 
             # exclude 'Water body and Marshland'
-            response['settlement_total'] = len(set(c['settlatrisk'] for c in counts if c['agg_simplified_description'] not in ['Water body and Marshland']))
-            # response['settlement_total'] = getTotalSettlement(filterLock, flag, code, targetBase) if not cached else cache_data['settlements']
+            baseline['settlement_total'] = len(set(c['settlatrisk'] for c in counts if c['agg_simplified_description'] not in ['Water body and Marshland']))
+            # baseline['settlement_total'] = getTotalSettlement(filterLock, flag, code, targetBase) if not cached else cache_data['settlements']
 
         for sub in ['pop','area','building']:
             for k,v in LANDCOVER_TYPES_GROUP.items():
-                response.path(sub+'_lcgroup')[k] = sum([response[sub+'_lc'].get(i) or 0 for i in v])
+                baseline.path(sub+'_lcgroup')[k] = sum([baseline[sub+'_lc'].get(i) or 0 for i in v])
 
     if include_section('healthfacility', includes, excludes):
         hltParentData = getParentHltFacRecap(filterLock, flag, code)
         sliced = {HEALTHFAC_TYPES_INVERSE[c['facility_types_description']]:c['numberhospital'] for c in hltParentData}
-        response['healthfacility'] = {k:round(sliced.get(v) or 0, 0) for k,v in HEALTHFAC_TYPES.items()}
-        response['healthfacility_total'] = sum(response['healthfacility'].values())
+        baseline['healthfacility'] = {k:round(sliced.get(v) or 0, 0) for k,v in HEALTHFAC_TYPES.items()}
+        baseline['healthfacility_total'] = sum(baseline['healthfacility'].values())
 
     if include_section('road', includes, excludes):
         roadParentData = getParentRoadNetworkRecap(filterLock, flag, code)
         sliced = dict([(c['type_update'], c['road_length']) for c in roadParentData])
-        response['road'] = {k:round(sliced.get(k) or 0, 0) for k in ROAD_TYPES}
-        response['road_total'] = sum(response['road'].values())
+        baseline['road'] = {k:round(sliced.get(k) or 0, 0) for k in ROAD_TYPES}
+        baseline['road_total'] = sum(baseline['road'].values())
 
     if include_section('adm_lc', includes, excludes):
-        response['adm_lc'] = getProvinceSummary(filterLock, flag, code)
+        baseline['adm_lc'] = getProvinceSummary(filterLock, flag, code)
 
     if include_section('adm_hlt_road', includes, excludes):
-        response['adm_hlt_road'] = getProvinceAdditionalSummary(filterLock, flag, code)
+        baseline['adm_hlt_road'] = getProvinceAdditionalSummary(filterLock, flag, code)
 
     if include_section('GeoJson', includes, excludes):
-        response['GeoJson'] = getGeoJson(request, flag, code)
+        baseline['GeoJson'] = getGeoJson(request, flag, code)
 
-    return response
+    return baseline if baselineonly else response
 
 def getParentRoadNetworkRecap(filterLock, flag, code):
+    values = ['type_update']
+    annotates = {'counter':Count('pk'),'road_length':Sum('road_length')/1000}
+    basequery = AfgRdsl.objects.all().values(*values)
     if flag=='drawArea':
-        # countsRoadBase = AfgRdsl.objects.all().values('type_update').annotate(counter=Count('ogc_fid')).extra(
-        # select={
-        #     'road_length' : 'SUM(  \
-        #             case \
-        #                 when ST_CoveredBy(wkb_geometry'+','+filterLock+') then road_length \
-        #                 else ST_Length(st_intersection(wkb_geometry::geography'+','+filterLock+')) / road_length end \
-        #         )/1000'
-        # },
-        # where = {
-        #     'ST_Intersects(wkb_geometry'+', '+filterLock+')'
-        # }).values('type_update','road_length')
-        countsRoadBase = AfgRdsl.objects.all().values('type_update').\
-            annotate(counter=Count('ogc_fid')).\
-            annotate(road_length=RawSQL_nogroupby('SUM(  \
-                    case \
-                            when ST_CoveredBy(wkb_geometry'+','+filterLock+') then road_length \
-                            else ST_Length(st_intersection(wkb_geometry::geography'+','+filterLock+')) / road_length end \
-                    )/1000', ())).\
-            extra(
-                where = {
-                    'ST_Intersects(wkb_geometry'+', '+filterLock+')'
-                })
-
+        annotates['road_length']=RawSQL_nogroupby('SUM( \
+            case \
+                when ST_CoveredBy(wkb_geometry,%s) then road_length \
+                else ST_Length(st_intersection(wkb_geometry::geography,%s)) / road_length end \
+            )/1000', (filterLock,filterLock))
+        query = basequery.annotate(**annotates).extra(where={'ST_Intersects(wkb_geometry,%s)'%(filterLock)})
     elif flag=='entireAfg':
-        # countsRoadBase = AfgRdsl.objects.all().values('type_update').annotate(counter=Count('ogc_fid')).extra(
-        #         select={
-        #             'road_length' : 'SUM(road_length)/1000'
-        #         }).values('type_update', 'road_length')
-        print AfgRdsl.objects.all().values('type_update').\
-            annotate(counter=Count('ogc_fid')).\
-            annotate(road_length=RawSQL_nogroupby('SUM("road_length")',())/1000).query
-        countsRoadBase = AfgRdsl.objects.all().values('type_update').\
-            annotate(counter=Count('ogc_fid')).\
-            annotate(road_length=Sum('road_length')/1000)
-
+        query = basequery.annotate(**annotates)
     elif flag=='currentProvince':
-        if len(str(code)) > 2:
-            ff0001 =  "dist_code  = '"+str(code)+"'"
-        else :
-            if len(str(code))==1:
-                ff0001 =  "left(cast(dist_code as text),1)  = '"+str(code)+"' and length(cast(dist_code as text))=3"
-            else:
-                ff0001 =  "left(cast(dist_code as text),2)  = '"+str(code)+"' and length(cast(dist_code as text))=4"
-
-        countsRoadBase = AfgRdsl.objects.all().values('type_update').annotate(counter=Count('ogc_fid')).extra(
-            select={
-                 'road_length' : 'SUM(road_length)/1000'
-            },
-            where = {
-                ff0001
-             }).values('type_update','road_length')
-
+        ff0001 = "dist_code  = '%s'"%(code) if len(str(code)) > 2 else ("left(cast(dist_code as text),%s)='%s' and length(cast(dist_code as text))=%s".format(*[1,code,3] if len(str(code))==1 else [2,code,4]))
+        # ff0001 = "dist_code  = '%s'"%(code) if len(str(code)) > 2 else ("left(cast(dist_code as text),%s)='%s' and length(cast(dist_code as text))=%s"%(*[1,code,3] if len(str(code))==1 else *[2,code,4]))
+        query = basequery.annotate(**annotates).extra(where={ff0001})
     elif flag=='currentBasin':
         print 'currentBasin'
     else:
-        countsRoadBase = AfgRdsl.objects.all().values('type_update').annotate(counter=Count('ogc_fid')).extra(
-            select={
-                'road_length' : 'SUM(road_length)/1000'
-            },
-            where = {
-                'ST_Within(wkb_geometry'+', '+filterLock+')'
-            }).values('type_update','road_length')
-    return countsRoadBase
+        query = basequery.annotate(**annotates).extra(where={'ST_Within(wkb_geometry,%s)'%(filterLock)})
+    return query
+    # if flag=='drawArea':
+    #     # countsRoadBase = AfgRdsl.objects.all().values('type_update').annotate(counter=Count('ogc_fid')).extra(
+    #     # select={
+    #     #     'road_length' : 'SUM(  \
+    #     #             case \
+    #     #                 when ST_CoveredBy(wkb_geometry'+','+filterLock+') then road_length \
+    #     #                 else ST_Length(st_intersection(wkb_geometry::geography'+','+filterLock+')) / road_length end \
+    #     #         )/1000'
+    #     # },
+    #     # where = {
+    #     #     'ST_Intersects(wkb_geometry'+', '+filterLock+')'
+    #     # }).values('type_update','road_length')
+    #     countsRoadBase = AfgRdsl.objects.all().values(*values).\
+    #         annotate(counter=Count('ogc_fid')).\
+    #         annotate(road_length=RawSQL_nogroupby('SUM(  \
+    #                 case \
+    #                         when ST_CoveredBy(wkb_geometry'+','+filterLock+') then road_length \
+    #                         else ST_Length(st_intersection(wkb_geometry::geography'+','+filterLock+')) / road_length end \
+    #                 )/1000', ())).\
+    #         extra(
+    #             where = {
+    #                 'ST_Intersects(wkb_geometry'+', '+filterLock+')'
+    #             })
+
+    # elif flag=='entireAfg':
+    #     # countsRoadBase = AfgRdsl.objects.all().values('type_update').annotate(counter=Count('ogc_fid')).extra(
+    #     #         select={
+    #     #             'road_length' : 'SUM(road_length)/1000'
+    #     #         }).values('type_update', 'road_length')
+    #     print AfgRdsl.objects.all().values(*values).\
+    #         annotate(counter=Count('ogc_fid')).\
+    #         annotate(road_length=RawSQL_nogroupby('SUM("road_length")',())/1000).query
+    #     countsRoadBase = AfgRdsl.objects.all().values(*values).\
+    #         annotate(counter=Count('ogc_fid')).\
+    #         annotate(road_length=Sum('road_length')/1000)
+
+    # elif flag=='currentProvince':
+    #     if len(str(code)) > 2:
+    #         ff0001 =  "dist_code  = '"+str(code)+"'"
+    #     else :
+    #         if len(str(code))==1:
+    #             ff0001 =  "left(cast(dist_code as text),1)  = '"+str(code)+"' and length(cast(dist_code as text))=3"
+    #         else:
+    #             ff0001 =  "left(cast(dist_code as text),2)  = '"+str(code)+"' and length(cast(dist_code as text))=4"
+
+    #     countsRoadBase = AfgRdsl.objects.all().values(*values).annotate(counter=Count('ogc_fid')).extra(
+    #         select={
+    #              'road_length' : 'SUM(road_length)/1000'
+    #         },
+    #         where = {
+    #             ff0001
+    #          })
+
+    # elif flag=='currentBasin':
+    #     print 'currentBasin'
+    # else:
+    #     countsRoadBase = AfgRdsl.objects.all().values(*values).annotate(counter=Count('ogc_fid')).extra(
+    #         select={
+    #             'road_length' : 'SUM(road_length)/1000'
+    #         },
+    #         where = {'ST_Within(wkb_geometry'+', '+filterLock+')'})
+    # return countsRoadBase
 
 def getParentHltFacRecap(filterLock, flag, code):
-    targetBase = AfgHltfac.objects.all().filter(activestatus='Y')
+    values = ['facility_types_description']
+    annotates = {'counter':Count('pk'),'numberhospital':Count('pk')}
+    targetBase = AfgHltfac.objects.all().filter(activestatus='Y').values(*values).annotate(**annotates)
     if flag=='drawArea':
-        countsHLTBase = targetBase.values('facility_types_description').annotate(counter=Count('ogc_fid')).extra(
-                select={
-                    'numberhospital' : 'count(*)'
-                },
-                where = {
-                    'ST_Intersects(wkb_geometry'+', '+filterLock+')'
-                }).values('facility_types_description','numberhospital')
-
+        countsHLTBase = targetBase.extra(where={'ST_Intersects(wkb_geometry,%s)'%(filterLock)})
     elif flag=='entireAfg':
-        # countsHLTBase = targetBase.values('facility_types_description').annotate(counter=Count('ogc_fid')).extra(
-        #         select={
-        #             'numberhospital' : 'count(*)'
-        #         }).values('facility_types_description','numberhospital')
-        # isdc rewrite
-        countsHLTBase = targetBase.values('facility_types_description').\
-            annotate(counter=Count('ogc_fid')).\
-            annotate(numberhospital=Count('ogc_fid'))
-
+        countsHLTBase = targetBase
     elif flag=='currentProvince':
-        if len(str(code)) > 2:
-            ff0001 =  "dist_code  = '"+str(code)+"'"
-        else :
-            ff0001 = "prov_code  = '"+str(code)+"'"
-
-        countsHLTBase = targetBase.values('facility_types_description').annotate(counter=Count('ogc_fid')).extra(
-            select={
-                    'numberhospital' : 'count(*)'
-            },where = {
-                ff0001
-            }).values('facility_types_description','numberhospital')
+        ff0001 =  "%s = '%s'"%('dist_code' if len(str(code)) > 2 else 'prov_code', code)
+        countsHLTBase = targetBase.extra(where={ff0001})
     elif flag=='currentBasin':
         print 'currentBasin'
     else:
-        countsHLTBase = targetBase.values('facility_types_description').annotate(counter=Count('ogc_fid')).extra(
-            select={
-                    'numberhospital' : 'count(*)'
-            },where = {
-                'ST_Within(wkb_geometry'+', '+filterLock+')'
-            }).values('facility_types_description','numberhospital')
+        countsHLTBase = targetBase.extra(where={'ST_Within(wkb_geometry,%s)'%(filterLock)})
     return countsHLTBase
 
 def getTotalBuildings(filterLock, flag, code, targetBase):
