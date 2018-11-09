@@ -424,7 +424,7 @@ def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], injec
 
     if include_section('road', includes, excludes):
         roadParentData = getParentRoadNetworkRecap(filterLock, flag, code)
-        sliced = dict([(c['type_update'], c['road_length']) for c in roadParentData])
+        sliced = {c['type_update']:c['road_length'] for c in roadParentData}
         baseline['road'] = {k:round(sliced.get(k) or 0, 0) for k in ROAD_TYPES}
         baseline['road_total'] = sum(baseline['road'].values())
 
@@ -453,7 +453,7 @@ def getParentRoadNetworkRecap(filterLock, flag, code):
     elif flag=='entireAfg':
         query = basequery.annotate(**annotates)
     elif flag=='currentProvince':
-        ff0001 = "dist_code  = '%s'"%(code) if len(str(code)) > 2 else ("left(cast(dist_code as text),%s)='%s' and length(cast(dist_code as text))=%s".format(*[1,code,3] if len(str(code))==1 else [2,code,4]))
+        ff0001 = "dist_code  = '%s'"%(code) if len(str(code)) > 2 else ("left(cast(dist_code as text),{})='{}' and length(cast(dist_code as text))={}".format(*[1,code,3] if len(str(code))==1 else [2,code,4]))
         # ff0001 = "dist_code  = '%s'"%(code) if len(str(code)) > 2 else ("left(cast(dist_code as text),%s)='%s' and length(cast(dist_code as text))=%s"%(*[1,code,3] if len(str(code))==1 else *[2,code,4]))
         query = basequery.annotate(**annotates).extra(where={ff0001})
     elif flag=='currentBasin':
