@@ -178,6 +178,12 @@ DEPTH_TYPES = {
     'high': '271 cm',
 }
 
+DEPTH_TYPES_SIMPLE = {
+    'low': 'Low',
+    'med': 'Medium',
+    'high': 'High',
+}
+
 DEPTH_TYPES_INVERSE = {v: k for k, v in DEPTH_TYPES.items()}
 
 AVA_LIKELIHOOD_INDEX = {1:'low', 2:'med', 3:'high'}
