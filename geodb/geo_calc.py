@@ -810,7 +810,7 @@ def getTotalRoadNetwork(filterLock, flag, code, targetBase):
 	return round(float(countsRoadBase[0]['road_length'] or 0),0)
 
 def getProvinceSummary(filterLock, flag, code, **kwargs):
-	cursor = connections['geodb'].cursor()
+	# cursor = connections['geodb'].cursor()
 
 	print flag, code
 
@@ -846,21 +846,22 @@ def getProvinceSummary(filterLock, flag, code, **kwargs):
 	else:
 		return []
 
-	row = query_to_dicts(cursor, sql)
+	# row = query_to_dicts(cursor, sql)
 
-	response = []
+	# response = []
 
-	for i in row:
-		response.append(i)
+	# for i in row:
+	# 	response.append(i)
 
-	cursor.close()
+	# cursor.close()
 
-	response = getProvinceSummary_glofas_formatter(response) if kwargs.get('formatted') else response
+	with connections['geodb'].cursor() as cursor:
+		response = list(query_to_dicts(cursor, sql))
 
 	return response
 
 def getProvinceAdditionalSummary(filterLock, flag, code):
-	cursor = connections['geodb'].cursor()
+	# cursor = connections['geodb'].cursor()
 
 	if flag == 'entireAfg':
 		sql = "select b.prov_code as code, b.prov_na_en as na_en, a.*, \
@@ -880,37 +881,26 @@ def getProvinceAdditionalSummary(filterLock, flag, code):
 	else:
 		return []
 
-	row = query_to_dicts(cursor, sql)
+	# row = query_to_dicts(cursor, sql)
 
-	response = []
+	# response = []
 
-	for i in row:
-		response.append(i)
+	# for i in row:
+	# 	response.append(i)
 
-	cursor.close()
+	# cursor.close()
+
+	with connections['geodb'].cursor() as cursor:
+		response = list(query_to_dicts(cursor, sql))
 
 	return response
 
-def getProvinceSummary_glofas_formatter(dictdata):
-	
-	response = dict_ext()
-	
-	for k,v in dictdata.items():
-		keys = k.split('_')
-		if keys.get(0) in LIKELIHOOD_TYPES:
-			response.path('glofas_likelihood')[keys[0]] = v
-		elif keys.get(1) == 'forecast' and keys.get(2) in LIKELIHOOD_TYPES:
-			response.path('pop_%s_glofas_likelihood'%(keys.get(0)))[keys.get(2)] = v
-		else:
-			response.path('glofas')[k] = v
-			
-	return response
-
-def getProvinceSummary_glofas(filterLock, flag, code, YEAR, MONTH, DAY, merge):
-	cursor = connections['geodb'].cursor()
-	table = 'get_glofas_detail'
-	if merge:
-		table = 'get_merge_glofas_gfms_detail'
+def getProvinceSummary_glofas(filterLock, flag, code, YEAR, MONTH, DAY, merge, **kwargs):
+	# cursor = connections['geodb'].cursor()
+	# table = 'get_glofas_detail'
+	# if merge:
+	# 	table = 'get_merge_glofas_gfms_detail'
+	table = 'get_merge_glofas_gfms_detail' if merge else 'get_glofas_detail'
 
 	if flag == 'entireAfg':
 		sql = "select b.prov_code as code, b.prov_na_en as na_en, \
@@ -929,7 +919,7 @@ def getProvinceSummary_glofas(filterLock, flag, code, YEAR, MONTH, DAY, merge):
 				c.extreme, \
 				c.veryhigh, \
 				c.high, \
-				c.moderate, \
+				c.med, \
 				c.low, \
 				c.verylow \
 				from afg_admbnda_adm1 b \
@@ -940,7 +930,7 @@ def getProvinceSummary_glofas(filterLock, flag, code, YEAR, MONTH, DAY, merge):
 				sum(extreme) as extreme,\
 				sum(veryhigh) as veryhigh,\
 				sum(high) as high, \
-				sum(moderate) as moderate, \
+				sum(moderate) as med, \
 				sum(low) as low, \
 				sum(verylow) as verylow \
 				from %s('%s-%s-%s') \
@@ -964,7 +954,7 @@ def getProvinceSummary_glofas(filterLock, flag, code, YEAR, MONTH, DAY, merge):
 				c.extreme, \
 				c.veryhigh, \
 				c.high, \
-				c.moderate, \
+				c.med, \
 				c.low, \
 				c.verylow \
 				from afg_admbnda_adm2 b \
@@ -975,7 +965,7 @@ def getProvinceSummary_glofas(filterLock, flag, code, YEAR, MONTH, DAY, merge):
 				sum(extreme) as extreme,\
 				sum(veryhigh) as veryhigh,\
 				sum(high) as high, \
-				sum(moderate) as moderate, \
+				sum(moderate) as med, \
 				sum(low) as low, \
 				sum(verylow) as verylow \
 				from %s('%s-%s-%s') \
@@ -987,15 +977,38 @@ def getProvinceSummary_glofas(filterLock, flag, code, YEAR, MONTH, DAY, merge):
 	else:
 		return []
 
-	row = query_to_dicts(cursor, sql)
+	# row = query_to_dicts(cursor, sql)
 
+	# response = []
+
+	# for i in row:
+	# 	response.append(i)
+
+	# cursor.close()
+
+	with connections['geodb'].cursor() as cursor:
+		response = list(query_to_dicts(cursor, sql))
+		response = getProvinceSummary_glofas_formatter(response) if kwargs.get('formatted') else response
+
+	return response
+
+def getProvinceSummary_glofas_formatter(rows=[]):
+	
 	response = []
 
-	for i in row:
-		response.append(i)
+	for row in rows:
+		formatted = dict_ext()
+		for k,v in row.items():
+			keys = list_ext(k.split('_'))
+			if keys.get(0) in LIKELIHOOD_TYPES:
+				formatted.path('glofas_likelihood')[keys[0]] = v
+			elif keys.get(1) == 'forecast' and keys.get(2) in LIKELIHOOD_TYPES:
+				formatted.path('pop_%s_glofas_likelihood'%(keys.get(0)))[keys.get(2)] = v
+			else:
+				formatted[k] = v
 
-	cursor.close()
-
+		response.append(formatted)
+			
 	return response
 
 def getGeoJson (filterLock, flag, code):

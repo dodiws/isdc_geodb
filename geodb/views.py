@@ -382,7 +382,7 @@ def update_progress(progress, msg, proctime):
     sys.stdout.flush()
 
 def updateForecastSummary():
-    print 'kontol'
+    print 'def updateForecastSummary()'
     # targetRisk.select_related("basinmembers").defer('basinmember__wkb_geometry').exclude(basinmember__basins__riskstate=None).filter(basinmember__basins__forecasttype='riverflood',basinmember__basins__datadate='%s-%s-%s' %(YEAR,MONTH,DAY)
     # counts =  getRiskNumber(), filterLock, 'basinmember__basins__riskstate', 'fldarea_population', 'fldarea_sqm', flag, code, 'afg_fldzonea_100k_risk_landcover_pop')
     # temp = dict([(c['basinmember__basins__riskstate'], c['count']) for c in counts])
