@@ -9,7 +9,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='isdc-geodb',
-    version='0.1dev',
+    version='0.1dev2',
     packages=find_packages(),
     include_package_data=True,
     license='BSD License',  # temporary license
@@ -22,7 +22,6 @@ setup(
         'Environment :: Web Environment',
         'Framework :: Django',
         'Framework :: Django :: 1.8',  
-        'Intended Audience :: Developers, End Users',
         'License :: OSI Approved :: BSD License',  # temporary license
         'Operating System :: OS Independent',
         'Programming Language :: Python',

@@ -54,7 +54,7 @@ from djgeojson.serializers import Serializer as GeoJSONSerializer
 import timeago
 from fuzzywuzzy import process, fuzz
 
-from securitydb.models import SecureFeature
+# from securitydb.models import SecureFeature
 
 # ISDC
 from geonode.utils import include_section, none_to_zero, query_to_dicts, RawSQL_nogroupby, merge_dict, dict_ext

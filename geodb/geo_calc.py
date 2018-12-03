@@ -74,7 +74,7 @@ from vectorformats.Feature import Feature
 from vectorformats.Formats.Format import Format
 
 # ISDC
-from geonode.utils import include_section, none_to_zero, query_to_dicts, RawSQL_nogroupby, dict_ext, list_ext
+from geonode.utils import include_section, none_to_zero, query_to_dicts, RawSQL_nogroupby, dict_ext, list_ext, linenum
 from django.conf import settings
 
 import importlib
@@ -1082,13 +1082,7 @@ def getRiskNumber(data, filterLock, fieldGroup, popField, areaField, houseField,
 	annotates.update({alias['area']: Sum(areaField)} if areaField else {})
 	annotates.update({alias['building']: Sum(houseField)} if houseField else {})
 	annotates.update({alias['settlement']: Count(kwargs['settlField'], distinct=True)} if 'settlField' in kwargs else {})
-	
-	# values_fields = [fieldGroup] + annotates.keys()
-	# if atablename == None:
-	#     atablename = ''
-	# else:
-	#     atablename = atablename+'.'
-			
+				
 	if aflag=='drawArea':
 
 		sum_tpl = '\
@@ -1117,68 +1111,15 @@ def getRiskNumber(data, filterLock, fieldGroup, popField, areaField, houseField,
 
 		counts = data.values(*fieldGroup).annotate(**annotates).extra(where = {'ST_Intersects(%swkb_geometry, %s)'%(atablename, filterLock)})
 
-		# counts = data.values(fieldGroup).annotate(counter=Count('ogc_fid')).extra(
-		#     select={
-		#         'count' : 'SUM(  \
-		#                 case \
-		#                     when ST_CoveredBy('+atablename+'wkb_geometry'+','+filterLock+') then '+popField+' \
-		#                     else st_area(st_intersection('+atablename+'wkb_geometry'+','+filterLock+')) / st_area('+atablename+'wkb_geometry'+')*'+popField+' end \
-		#         )',
-		#         'areaatrisk' : 'SUM(  \
-		#                 case \
-		#                     when ST_CoveredBy('+atablename+'wkb_geometry'+','+filterLock+') then '+areaField+' \
-		#                     else st_area(st_intersection('+atablename+'wkb_geometry'+','+filterLock+')) / st_area('+atablename+'wkb_geometry'+')*'+areaField+' end \
-		#         )',
-		#         'houseatrisk' : 'SUM(  \
-		#                 case \
-		#                     when ST_CoveredBy('+atablename+'wkb_geometry'+','+filterLock+') then '+houseField+' \
-		#                     else st_area(st_intersection('+atablename+'wkb_geometry'+','+filterLock+')) / st_area('+atablename+'wkb_geometry'+')*'+houseField+' end \
-		#         )'
-		#     },
-		#     where = {
-		#         'ST_Intersects(%swkb_geometry, %s)'%(atablename, filterLock)
-		#     }).values(fieldGroup,'count','areaatrisk','houseatrisk') 
 	elif aflag=='entireAfg':
-		# print data.values(fieldGroup).\
-		#     annotate(counter=Count('ogc_fid')).\
-		#     annotate(count=Sum(popField)).\
-		#     annotate(areaatrisk=Sum(areaField)).\
-		#     annotate(houseatrisk=Sum(houseField)).query
-		# counts = data.values(fieldGroup).annotate(counter=Count('ogc_fid')).extra(
-		#     select={
-		#         'count' : 'SUM('+popField+')',
-		#         'areaatrisk' : 'SUM('+areaField+')',
-		#         'houseatrisk' : 'SUM('+houseField+')'
-		#     }).values(fieldGroup,'count','areaatrisk','houseatrisk')   
-		# isdc rewrite
-		# counts = data.values(fieldGroup).\
-		#     annotate(counter=Count('ogc_fid')).\
-		#     annotate(count=Sum(popField)).\
-		#     annotate(areaatrisk=Sum(areaField)).\
-		#     annotate(houseatrisk=Sum(houseField))   
 		counts = data.values(*fieldGroup).annotate(**annotates)
 	elif aflag=='currentProvince':
-		# print "left(dist_code), "+str(len(str(acode)))+") = '"+str(acode)+"'"
-		# print "left(dist_code, "+len(str(acode))+") = '"+str(acode)+"'"
 		ff0001 =  "%s = '%s'"%('dist_code' if len(str(acode)) > 2 else 'prov_code', acode)
-		# if len(str(acode)) > 2:
-		#     ff0001 =  "dist_code  = '"+str(acode)+"'"
-		# else :
-		#     ff0001 =  "prov_code  = '"+str(acode)+"'"
-				
 		counts = data.values(*fieldGroup).annotate(**annotates).extra(where = {ff0001})
-		# counts = data.values(fieldGroup).annotate(counter=Count('ogc_fid')).extra(
-		#     select={
-		#         'count' : 'SUM('+popField+')',
-		#         'areaatrisk' : 'SUM('+areaField+')',
-		#         'houseatrisk' : 'SUM('+houseField+')'
-		#     },
-		#     where = {
-		#         ff0001
-		#     }).values(fieldGroup,'count','areaatrisk','houseatrisk')    
 	elif aflag=='currentBasin':
 		counts = data.values(*fieldGroup).annotate(**annotates).extra(where = {"%svuid = '%s'"%(atablename,acode)})
 	else:
 		counts = data.values(*fieldGroup).annotate(**annotates).extra(where = {'ST_Within(%swkb_geometry, %s)'%(atablename, filterLock)})
+	print linenum(), counts.query
 	return list(counts)     
 

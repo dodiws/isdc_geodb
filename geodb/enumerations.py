@@ -191,6 +191,7 @@ AVA_LIKELIHOOD_TYPES = {'high':'High','med':'Medium','low':'Low'}
 AVA_LIKELIHOOD_INVERSE = {v: k for k, v in AVA_LIKELIHOOD_TYPES.items()}
 
 TIME_DISTANCE_TYPES = ['l1','l2','l3','l4','l5','l6','l7','l8','g8']
+TIME_DISTANCE_TITLES = {'l1':'1>','l2':'2>','l3':'3>','l4':'4>','l5':'5>','l6':'6>','l7':'7>','l8':'8>','g8':'8<'}
 
 EARTHQUAKE_TYPES = {
     'weak': 'Weak',
