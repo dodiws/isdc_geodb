@@ -286,7 +286,9 @@ def getBaselineStatistic(request,filterLock, flag, code, yy=None, mm=None, dd=No
 
 	response_dashboard_baseline = dashboard_baseline(request, filterLock, flag, code)
 	response = dict_ext()
-	response['source'] = response_dashboard_baseline['source']
+	source = response_dashboard_baseline['source']
+	panels = response_dashboard_baseline['panels']
+	panels_list = response.path('panels_list')
 
 	# response['source'] = baseline = getBaseline(request, filterLock, flag, code)
 	# response['panels'] = {k:{'title':v} for k,v in PANEL_TITLES.items()}
@@ -297,21 +299,32 @@ def getBaselineStatistic(request,filterLock, flag, code, yy=None, mm=None, dd=No
 	# response.path('panels','healthfacility')['child'] = [{'value':baseline['healthfacility'][v], 'title':HEALTHFAC_TYPES[v]} for k,v in HEALTHFAC_INDEX.items()]
 	# response.path('panels','road')['child'] = [{'value':baseline['road'][v], 'title':ROAD_TYPES[v]} for k,v in ROAD_INDEX.items()]
 
-	trans = {'pop_lc':'pop','area_lc':'area','building_lc':'building','healthfacility':'healthfacility','road':'road'}
-	trans_order = ['pop_lc','area_lc','building_lc','healthfacility','road']
-	response.path('panels_list')['chart'] = []
-	for k in trans_order:
-		p = {}
-		p['child'] = [{'value':response_dashboard_baseline['panels'][k]['value'][i], 'title':t} for i,t in enumerate(response_dashboard_baseline['panels'][k]['title'])]
-		p['title'] = PANEL_TITLES.get(trans.get(k))
-		p['total'] = response_dashboard_baseline['panels'][k]['total']
-		response['panels_list']['chart'].append(p)
-	response.path('panels_list')['tables'] = [{
-		'title':response_dashboard_baseline['panels'][i]['title'],
-		'child':[response_dashboard_baseline['panels'][i]['parentdata']]+[j['value'] for j in response_dashboard_baseline['panels'][i]['child']]
-	} for i in ['adm_lcgroup_pop_area','adm_healthfacility','adm_road']]
+	# trans = {'pop_lc':'pop','area_lc':'area','building_lc':'building','healthfacility':'healthfacility','road':'road'}
+	# trans_order = ['pop_lc','area_lc','building_lc','healthfacility','road']
+
+	# panels_list['charts'] = [{
+	# 	'child':[{'value':panels[k]['value'][i], 'title':t} for i,t in enumerate(panels['charts'][k]['title'])],
+	# 	'title':PANEL_TITLES.get(trans.get(k)),
+	# 	'total':panels['charts'][k]['total'],
+	# } for k in trans_order]
+
+	panels_list['chart'] = [{
+		'child':[{'value':chart['value'][i], 'title':t} for i,t in enumerate(chart['title'])],
+		'title':chart['charttitle'],
+	} for chart in panels['charts']+[panels['total']]]
+
+	panels_list['tables'] = [{
+		'child':[table['parentdata']]+[r['value'] for r in table['child']],
+		'title':table['title'],
+	} for table in panels['tables']]
+
+	# panels_list['tables'] = [{
+	# 	'title':panels['tables'][i]['title'],
+	# 	'child':[panels['tables'][i]['parentdata']]+[j['value'] for j in panels['tables'][i]['child']]
+	# } for i in ['adm_lcgroup_pop_area','adm_healthfacility','adm_road']]
+
 	for k,v in {'pop':'pop_total','area':'area_total','building':'building_total','settlement':'settlement_total','healthfacility':'healthfacility_total','road':'road_total'}.items():
-		response.path('panels_list','total')[k] = response_dashboard_baseline['source'][v]
+		panels_list.path('total')[k] = source[v]
 	
 	return response
 

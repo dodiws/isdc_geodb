@@ -213,3 +213,10 @@ LANDSLIDE_TYPES = {
     'very_high': 'Very High',
 }
 LANDSLIDE_TYPES_ORDER = ['very_low','low','moderate','high','very_high']
+
+FLOODFORECAST_SOURCE_TYPES = {
+    'gfms':'GFMS',
+    'glofas':'GLOFAS',
+    'gfms_glofas':'GFMS & GLOFAS',
+}
+FLOODFORECAST_SOURCE_ORDER = ['gfms','glofas','gfms_glofas',]
