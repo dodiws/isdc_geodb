@@ -308,15 +308,23 @@ def getBaselineStatistic(request,filterLock, flag, code, yy=None, mm=None, dd=No
 	# 	'total':panels['charts'][k]['total'],
 	# } for k in trans_order]
 
-	panels_list['chart'] = [{
-		'child':[{'value':chart['value'][i], 'title':t} for i,t in enumerate(chart['title'])],
-		'title':chart['charttitle'],
-	} for chart in dict_ext(panels['charts']).valueslistbykey('pop_lc','area_lc','building_lc','healthfacility','road')+[panels['total']]]
+	keys = ['pop_lc','area_lc','building_lc','healthfacility','road','total']
+	charts = dict_ext(panels['charts']).within(*keys)
+	total = dict_ext(panels).within(*keys)
+	charts.update(total)
+	panels_list['charts'] = [{
+		'child':[{'value':charts[key]['value'][i], 'title':t} for i,t in enumerate(charts[key]['title'])],
+		'title':charts[key]['charttitle'],
+		'key': key,
+	} for key in keys if key in charts]
 
+	keys = ['adm_lcgroup_pop_area','adm_hlt_road','adm_road']
+	tables = dict_ext(panels['tables']).within(*keys)
 	panels_list['tables'] = [{
-		'child':[table['parentdata']]+[r['value'] for r in table['child']],
-		'title':table['title'],
-	} for table in dict_ext(panels['tables']).valueslistbykey('adm_lcgroup_pop_area','adm_hlt_road','adm_road')]
+		'child':[tables[key]['parentdata']]+[r['value'] for r in tables[key]['child']],
+		'title':tables[key]['title'],
+		'key':key,
+	} for key in keys if key in tables]
 
 	# panels_list['tables'] = [{
 	# 	'title':panels['tables'][i]['title'],
