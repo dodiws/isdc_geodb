@@ -311,12 +311,12 @@ def getBaselineStatistic(request,filterLock, flag, code, yy=None, mm=None, dd=No
 	panels_list['chart'] = [{
 		'child':[{'value':chart['value'][i], 'title':t} for i,t in enumerate(chart['title'])],
 		'title':chart['charttitle'],
-	} for chart in panels['charts']+[panels['total']]]
+	} for chart in dict_ext(panels['charts']).valueslistbykey('pop_lc','area_lc','building_lc','healthfacility','road')+[panels['total']]]
 
 	panels_list['tables'] = [{
 		'child':[table['parentdata']]+[r['value'] for r in table['child']],
 		'title':table['title'],
-	} for table in panels['tables']]
+	} for table in dict_ext(panels['tables']).valueslistbykey('adm_lcgroup_pop_area','adm_hlt_road','adm_road')]
 
 	# panels_list['tables'] = [{
 	# 	'title':panels['tables'][i]['title'],
@@ -326,7 +326,7 @@ def getBaselineStatistic(request,filterLock, flag, code, yy=None, mm=None, dd=No
 	for k,v in {'pop':'pop_total','area':'area_total','building':'building_total','settlement':'settlement_total','healthfacility':'healthfacility_total','road':'road_total'}.items():
 		panels_list.path('total')[k] = source[v]
 	
-	return response
+	return response.within('panels_list')
 
 def getRiskExecuteExternal(filterLock, flag, code, yy=None, mm=None, dd=None, rf_type=None, bring=None):
 	date_params = yy and mm and dd
