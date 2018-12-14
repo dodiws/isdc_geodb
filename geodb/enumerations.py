@@ -1,12 +1,14 @@
+from django.utils.translation import gettext_noop as _
+
 # RESPONSE_TREE_TEMPLATE = {}
  
 PANEL_TITLES = {
-    'pop': 'Population',
-    'area': 'Area (km2)',
-    'settlement': 'Settlements',
-    'building': 'Buildings',
-    'road': 'Road (km)',
-    'healthfacility': 'Health Facilities',
+    'pop': _('Population'),
+    'area': _('Area (km2)'),
+    'settlement': _('Settlements'),
+    'building': _('Buildings'),
+    'road': _('Road (km)'),
+    'healthfacility': _('Health Facilities'),
 }
 
 HEALTHFAC_INDEX = {
@@ -191,7 +193,7 @@ AVA_LIKELIHOOD_TYPES = {'high':'High','med':'Medium','low':'Low'}
 AVA_LIKELIHOOD_INVERSE = {v: k for k, v in AVA_LIKELIHOOD_TYPES.items()}
 
 TIME_DISTANCE_TYPES = ['l1','l2','l3','l4','l5','l6','l7','l8','g8']
-TIME_DISTANCE_TITLES = {'l1':'1>','l2':'2>','l3':'3>','l4':'4>','l5':'5>','l6':'6>','l7':'7>','l8':'8>','g8':'8<'}
+TIME_DISTANCE_TITLES = {'l1':'< 1h','l2':'< 2h','l3':'< 3h','l4':'< 4h','l5':'< 5h','l6':'< 6h','l7':'< 7h','l8':'< 8h','g8':'> 8h'}
 
 EARTHQUAKE_TYPES = {
     'weak': 'Weak',
