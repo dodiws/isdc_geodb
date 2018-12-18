@@ -383,13 +383,13 @@ def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], injec
 
 	if include_section(['pop_lc','area_lc','building_lc'], includes, excludes):
 		if cached:
-			response = getShortCutDataFormatter(getShortCutData(flag, code))
+			response = dict_ext(getShortCutDataFormatter(getShortCutData(flag, code)))
 			baseline = response.path('baseline')
 
 			# separate query for building_lc because not cached
 			counts = getRiskNumber(targetBase, filterLock, 'agg_simplified_description', None, None, 'area_buildings', flag, code, None)
 
-			sliced = {c['agg_simplified_description']: c['houseatrisk'] for c in counts}
+			sliced = {c['agg_simplified_description']: c['houseatrisk'] or 0 for c in counts}
 			baseline['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
 			# baseline['building_total'] = sum(baseline['building_lc'].values()) # noqa, replace getTotalBuildings
 
@@ -397,15 +397,15 @@ def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], injec
 			counts = getRiskNumber(targetBase, filterLock, 'agg_simplified_description', 'area_population', 'area_sqm', 'area_buildings', flag, code, None, settlField = 'vuid')
 			baseline = response.path('baseline')
 
-			sliced = {c['agg_simplified_description']: c['count'] for c in counts}
+			sliced = {c['agg_simplified_description']: c['count'] or 0 for c in counts}
 			baseline['pop_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
 			baseline['pop_total'] = sum(baseline['pop_lc'].values()) # noqa, replace getTotalPop
 
-			sliced = {c['agg_simplified_description']: c['areaatrisk'] for c in counts}
+			sliced = {c['agg_simplified_description']: c['areaatrisk'] or 0 for c in counts}
 			baseline['area_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
 			baseline['area_total'] = sum(baseline['area_lc'].values()) # noqa, replace getTotalArea
 
-			sliced = {c['agg_simplified_description']: c['houseatrisk'] for c in counts}
+			sliced = {c['agg_simplified_description']: c['houseatrisk'] or 0 for c in counts}
 			baseline['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
 			baseline['building_total'] = sum(baseline['building_lc'].values()) # noqa, replace getTotalBuildings
 
@@ -449,12 +449,14 @@ def getParentRoadNetworkRecap(filterLock, flag, code):
 			case \
 				when ST_CoveredBy(wkb_geometry,%s) then road_length \
 				else ST_Length(st_intersection(wkb_geometry::geography,%s)) / road_length end \
-			)/1000', (filterLock,filterLock))
+			)/1000'%(filterLock,filterLock), ())
 		query = basequery.annotate(**annotates).extra(where={'ST_Intersects(wkb_geometry,%s)'%(filterLock)})
 	elif flag=='entireAfg':
 		query = basequery.annotate(**annotates)
 	elif flag=='currentProvince':
-		ff0001 = "dist_code  = '%s'"%(code) if len(str(code)) > 2 else ("left(cast(dist_code as text),{})='{}' and length(cast(dist_code as text))={}".format(*[1,code,3] if len(str(code))==1 else [2,code,4]))
+		ff0001 = "dist_code = '%s'"%(code) if len(str(code)) > 2 \
+			else ("left(cast(dist_code as text),{})='{}' and length(cast(dist_code as text))={}".format(*[1,code,3] if len(str(code))==1 \
+				else [2,code,4]))
 		# ff0001 = "dist_code  = '%s'"%(code) if len(str(code)) > 2 else ("left(cast(dist_code as text),%s)='%s' and length(cast(dist_code as text))=%s"%(*[1,code,3] if len(str(code))==1 else *[2,code,4]))
 		query = basequery.annotate(**annotates).extra(where={ff0001})
 	elif flag=='currentBasin':
@@ -1089,7 +1091,7 @@ def getRiskNumber(data, filterLock, fieldGroup, popField, areaField, houseField,
 			SUM(  \
 				case \
 					when ST_CoveredBy({atablename}wkb_geometry,{filterLock}) then {aggField} \
-					else st_area(st_intersection({atablename}wkb_geometry,{filterLock}) / st_area({atablename}wkb_geometry)*{aggField} \
+					else st_area(st_intersection({atablename}wkb_geometry,{filterLock})) / st_area({atablename}wkb_geometry)*{aggField} \
 				end \
 			)'
 

@@ -142,12 +142,8 @@ class BaselineStatisticResource(ModelResource):
 	def getRisk(self, request):
 		# saving the user tracking records
 
-		o = urlparse(request.META.get('HTTP_REFERER')).path
-		o=o.split('/')
-		if 'v2' in o:
-			mapCode = o[3]
-		else:
-			mapCode = o[2]
+		p = urlparse(request.META.get('HTTP_REFERER')).path.split('/')
+		mapCode = p[3] if 'v2' in p else p[2]
 		map_obj = _resolve_map(request, mapCode, 'base.view_resourcebase', _PERMISSION_MSG_VIEW)
 
 		queryset = matrix(user=request.user,resourceid=map_obj,action='Interactive Calculation')
@@ -155,40 +151,12 @@ class BaselineStatisticResource(ModelResource):
 
 		boundaryFilter = json.loads(request.body)
 
-		bring = None
-		temp1 = []
-		for i in boundaryFilter['spatialfilter']:
-			temp1.append('ST_GeomFromText(\''+i+'\',4326)')
-			bring = i
+		wkts = ['ST_GeomFromText(\'%s\',4326)'%(i) for i in boundaryFilter.get('spatialfilter',[])]
+		bring = wkts[-1] if len(wkts) else None
+		filterLock = 'ST_Union(ARRAY[%s])'%(','.join(wkts))
 
-		temp2 = 'ARRAY['
-		first=True
-		for i in temp1:
-			if first:
-				 temp2 = temp2 + i
-				 first=False
-			else :
-				 temp2 = temp2 + ', ' + i  
-
-		temp2 = temp2+']'
-		
-		filterLock = 'ST_Union('+temp2+')'
-		yy = None
-		mm = None
-		dd = None
-
-		if 'date' in boundaryFilter:
-			tempDate = boundaryFilter['date'].split("-")
-			dateSent = datetime.datetime(int(tempDate[0]), int(tempDate[1]), int(tempDate[2]))
-
-			if (datetime.datetime.today() - dateSent).days == 0:
-				yy = None
-				mm = None
-				dd = None
-			else:    
-				yy = tempDate[0]
-				mm = tempDate[1]
-				dd = tempDate[2]
+		d = datetime.datetime.strptime(boundaryFilter.get('date'),'%Y-%m-%d')
+		yy, mm, dd = [d.year, d.month, d.day] if (datetime.datetime.today() - d).days > 0 else [None, None, None]
 
 		response = getBaselineStatistic(request, filterLock,boundaryFilter['flag'],boundaryFilter['code'], yy, mm, dd, boundaryFilter['rf_type'], bring)
 
@@ -308,23 +276,17 @@ def getBaselineStatistic(request,filterLock, flag, code, yy=None, mm=None, dd=No
 	# 	'total':panels['charts'][k]['total'],
 	# } for k in trans_order]
 
-	keys = ['pop_lc','area_lc','building_lc','healthfacility','road','total']
-	charts = dict_ext(panels['charts']).within(*keys)
-	total = dict_ext(panels).within(*keys)
-	charts.update(total)
 	panels_list['charts'] = [{
-		'child':[{'value':charts[key]['value'][i], 'title':t} for i,t in enumerate(charts[key]['title'])],
-		'title':charts[key]['charttitle'],
-		'key': key,
-	} for key in keys if key in charts]
+		'child':[{'value':chart['value'][i], 'title':t} for i,t in enumerate(chart['title'])],
+		'title':chart['charttitle'],
+		'key':chart['key'],
+	} for chart in dict_ext(panels['charts']).valueslistbykey(['pop_lc','area_lc','building_lc','healthfacility','road'],addkeyasattr=True)+dict_ext(panels).valueslistbykey(['total'],addkeyasattr=True)]
 
-	keys = ['adm_lcgroup_pop_area','adm_hlt_road','adm_road']
-	tables = dict_ext(panels['tables']).within(*keys)
 	panels_list['tables'] = [{
-		'child':[tables[key]['parentdata']]+[r['value'] for r in tables[key]['child']],
-		'title':tables[key]['title'],
-		'key':key,
-	} for key in keys if key in tables]
+		'child':[table['parentdata']]+[r['value'] for r in table['child']],
+		'title':table['title'],
+		'key':table['key'],
+	} for table in dict_ext(panels['tables']).valueslistbykey(['adm_lcgroup_pop_area','adm_healthfacility','adm_road'],addkeyasattr=True)]
 
 	# panels_list['tables'] = [{
 	# 	'title':panels['tables'][i]['title'],
