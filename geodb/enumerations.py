@@ -138,6 +138,21 @@ PROVINCESUMMARY_LANDCOVER_TYPES = {
     'sand_dunes': 'sand_dunes',
 }
 
+PROVINCESUMMARY_LANDCOVER_TYPES_ORDER = {
+    'water_body',
+    'barren_land',
+    'built_up',
+    'fruit_trees',
+    'irrigated_agricultural_land',
+    'permanent_snow',
+    'rainfed_agricultural_land',
+    'rangeland',
+    'sandcover',
+    'vineyards',
+    'forest',
+    'sand_dunes',
+}
+
 LANDCOVER_TYPES_INVERSE = {v: k for k, v in LANDCOVER_TYPES.items()}
 
 LANDCOVER_TYPES_GROUP = {

@@ -224,69 +224,6 @@ def getRawBaseLine(filterLock, flag, code, includes=[], excludes=[]):
 
 	return response
 
-def getQuickOverview(request, filterLock, flag, code, includes=[], excludes=[]):
-	response = dict_ext()
-	tempData = getShortCutData(flag,code)
-	# response['Population']= tempData['Population']
-	# response['Area']= tempData['Area']
-	# response['Buildings']= tempData['total_buildings']
-	# response['settlement']= tempData['settlements']
-	initresponse = dict_ext(getCommonUse(request, flag, code))
-	if include_section('', includes, excludes):
-		response.update(getBaseline(request, filterLock, flag, code, 
-			excludes=['getProvinceSummary', 'getProvinceAdditionalSummary'],
-			response=initresponse,
-			inject={
-				'forward':True,
-				'Population': tempData['Population'],
-				'Area': tempData['Area'],
-				'total_buildings': tempData['total_buildings'],
-				'settlements': tempData['settlements']
-			}
-		))
-
-		# add response from optional modules
-		for modulename in settings.QUICKOVERVIEW_MODULES:
-			module = importlib.import_module(modulename+'.views')
-			tpl, data = module.getQuickOverview(request, filterLock, flag, code)
-			response.path('quickoverview_templates')[modulename] = tpl
-			response.path('quickoverview_data')[modulename] = data
-		
-		# response.update(getFloodForecastMatrix(filterLock, flag, code, includes=['flashflood_forecast_risk_pop']))
-		# response.update(getFloodForecast(request, filterLock, flag, code, excludes=['getCommonUse','detail']))
-		# response.update(getRawFloodRisk(filterLock, flag, code, excludes=['landcoverfloodrisk']))
-		# response.update(getRawAvalancheForecast(request, filterLock, flag, code))
-		# response.update(getRawAvalancheRisk(filterLock, flag, code))
-		# response.update(getLandslideRisk(request, filterLock, flag, code, includes=['lsi_immap']))
-		# response.update(getEarthquake(request, filterLock, flag, code, excludes=['getListEQ']))
-
-		# response.update(GetAccesibilityData(filterLock, flag, code, includes=['AfgCaptAirdrmImmap', 'AfgCaptHltfacTier1Immap', 'AfgCaptHltfacTier2Immap', 'AfgCaptAdm1ItsProvcImmap', 'AfgCapaGsmcvr']))
-		# response['pop_coverage_percent'] = int(round((response['pop_on_gsm_coverage']/response['Population'])*100,0))
-
-	# if include_section('getSAMParams', includes, excludes):
-	#     rawFilterLock = filterLock if 'flag' in request.GET else None
-	#     if 'daterange' in request.GET:
-	#         daterange = request.GET.get('daterange')
-	#     elif 'daterange' in request.POST:
-	#         daterange = request.POST.get('daterange')
-	#     else:
-	#         enddate = datetime.date.today()
-	#         startdate = datetime.date.today() - datetime.timedelta(days=365)
-	#         daterange = startdate.strftime("%Y-%m-%d")+','+enddate.strftime("%Y-%m-%d")
-	#     main_type_raw_data = getSAMParams(request, daterange, rawFilterLock, flag, code, group='main_type', includeFilter=True)
-	#     response['incident_type'] = (i['main_type'] for i in main_type_raw_data)
-	#     if 'incident_type' in request.GET:
-	#         response['incident_type'] = request.GET['incident_type'].split(',')
-	#     response['incident_type_group']=[]
-	#     for i in main_type_raw_data:
-	#         response['incident_type_group'].append({'count':i['count'],'injured':i['injured'],'violent':i['violent']+i['affected'],'dead':i['dead'],'main_type':i['main_type'],'child':list(getSAMIncident(request, daterange, rawFilterLock, flag, code, 'type', i['main_type']))})
-	#     response['main_type_child'] = getSAMParams(request, daterange, rawFilterLock, flag, code, 'main_type', False)
-
-	if include_section('GeoJson', includes, excludes):
-		response['GeoJson'] = json.dumps(getGeoJson(request, flag, code))
-
-	return response
-
 def getShortCutData(flag, code):
 	response = {}
 	if flag=='entireAfg':
@@ -322,23 +259,23 @@ def getShortCutData(flag, code):
 		response[p[:-5]] = px[p]
 	return response
 
-def getShortCutDataFormatter(dic):
+def getShortCutDataFormatter(source):
 	response_tree = dict_ext()
 
-	response_tree.path('baseline')['pop_total'] = dic['Population']
-	response_tree.path('baseline')['area_total'] = dic['Area']
-	response_tree.path('baseline')['settlement_total'] = dic['settlements']
-	response_tree.path('baseline')['building_total'] = dic['total_buildings']
-	response_tree.path('avalancherisk')['pop_total'] = dic['total_ava_population']
-	response_tree.path('avalancherisk')['area_total'] = dic['total_ava_area']
-	response_tree.path('avalancherisk')['building_total'] = dic['total_ava_buildings']
-	response_tree.path('avalancheforecast')['pop_total'] = dic['total_ava_forecast_pop']
-	response_tree.path('floodrisk')['pop_likelihood_total'] = dic['total_risk_population']
-	response_tree.path('floodrisk')['area_likelihood_total'] = dic['total_risk_area']
-	response_tree.path('floodrisk')['building_likelihood_total'] = dic['total_risk_buildings']
-	response_tree.path('floodrisk')['settlement_likelihood_total'] = dic['settlements_at_risk']
+	response_tree.path('baseline')['pop_total'] = source['Population']
+	response_tree.path('baseline')['area_total'] = source['Area']
+	response_tree.path('baseline')['settlement_total'] = source['settlements']
+	response_tree.path('baseline')['building_total'] = source['total_buildings']
+	response_tree.path('avalancherisk')['pop_total'] = source['total_ava_population']
+	response_tree.path('avalancherisk')['area_total'] = source['total_ava_area']
+	response_tree.path('avalancherisk')['building_total'] = source['total_ava_buildings']
+	response_tree.path('avalancheforecast')['pop_total'] = source['total_ava_forecast_pop']
+	response_tree.path('floodrisk')['pop_likelihood_total'] = source['total_risk_population']
+	response_tree.path('floodrisk')['area_likelihood_total'] = source['total_risk_area']
+	response_tree.path('floodrisk')['building_likelihood_total'] = source['total_risk_buildings']
+	response_tree.path('floodrisk')['settlement_likelihood_total'] = source['settlements_at_risk']
 
-	for key, value in dic.items():
+	for key, value in source.items():
 		parts = list_ext(key.split('_'))
 		if key in ['Population','Area','settlements','total_buildings','total_ava_population','total_ava_area','total_ava_buildings','total_ava_forecast_pop','total_risk_population','total_risk_area','total_risk_buildings','settlements_at_risk']:
 			pass
@@ -355,7 +292,7 @@ def getShortCutDataFormatter(dic):
 		elif key.endswith('area_risk'):
 			response_tree.path('floodrisk','area_lc')[PROVINCESUMMARY_LANDCOVER_TYPES.get(key[:-10],key[:-10])] = value
 		elif key.startswith('ava_forecast') and key.endswith('pop') and parts[2] in DEPTH_TYPES:
-			response_tree.path('avalancheforecast','pop_depth')[parts[2]] = value
+			response_tree.path('avalancheforecast','pop_likelihood')[parts[2]] = value
 		elif key.endswith('ava_buildings') and parts[0] in DEPTH_TYPES:
 			response_tree.path('avalancherisk','building_likelihood')[parts[0]] = value
 		elif key.endswith('pop'):
@@ -367,7 +304,9 @@ def getShortCutDataFormatter(dic):
 
 	return none_to_zero(response_tree)
  
-def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], inject={'forward':False}, response=dict_ext(), baselineonly=True):
+def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], response=dict_ext(), baselineonly=True, proportional=True):
+	# includes += response.pathget('context','getBaseline','includes') or []
+	# excludes += response.pathget('context','getBaseline','excludes') or []
 	targetBase = AfgLndcrva.objects.all()
 
 	cached = flag in ['entireAfg','currentProvince']
@@ -387,14 +326,14 @@ def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], injec
 			baseline = response.path('baseline')
 
 			# separate query for building_lc because not cached
-			counts = getRiskNumber(targetBase, filterLock, 'agg_simplified_description', None, None, 'area_buildings', flag, code, None)
+			counts = getRiskNumber(targetBase, filterLock, 'agg_simplified_description', None, None, 'area_buildings', flag, code, None, proportional=proportional)
 
 			sliced = {c['agg_simplified_description']: c['houseatrisk'] or 0 for c in counts}
 			baseline['building_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
 			# baseline['building_total'] = sum(baseline['building_lc'].values()) # noqa, replace getTotalBuildings
 
 		else:
-			counts = getRiskNumber(targetBase, filterLock, 'agg_simplified_description', 'area_population', 'area_sqm', 'area_buildings', flag, code, None, settlField = 'vuid')
+			counts = getRiskNumber(targetBase, filterLock, 'agg_simplified_description', 'area_population', 'area_sqm', 'area_buildings', flag, code, None, settlField = 'vuid', proportional=proportional)
 			baseline = response.path('baseline')
 
 			sliced = {c['agg_simplified_description']: c['count'] or 0 for c in counts}
@@ -402,7 +341,7 @@ def getBaseline(request, filterLock, flag, code, includes=[], excludes=[], injec
 			baseline['pop_total'] = sum(baseline['pop_lc'].values()) # noqa, replace getTotalPop
 
 			sliced = {c['agg_simplified_description']: c['areaatrisk'] or 0 for c in counts}
-			baseline['area_lc'] = {k:round(sliced.get(v, 0), 0) for k,v in LANDCOVER_TYPES.items()}
+			baseline['area_lc'] = {k:round(sliced.get(v, 0)/1000000, 0) for k,v in LANDCOVER_TYPES.items()}
 			baseline['area_total'] = sum(baseline['area_lc'].values()) # noqa, replace getTotalArea
 
 			sliced = {c['agg_simplified_description']: c['houseatrisk'] or 0 for c in counts}
@@ -1071,7 +1010,9 @@ def getGeoJson (filterLock, flag, code):
 def getRiskNumber(data, filterLock, fieldGroup, popField, areaField, houseField, aflag, acode, atablename, **kwargs):
 	'''
 	Generic query to get at-risk number for population, area, building, settlement
-	kwargs['alias'] for compatibility with getFloodForecastRisk, getFlashFloodForecastRisk
+	kwargs:
+		alias[dict]: for compatibility with getFloodForecastRisk, getFlashFloodForecastRisk
+		proportional[bool]: whether to use proportional intersect or just intersect
 	'''
 
 	atablename = atablename+'.' if atablename else ''
@@ -1087,29 +1028,34 @@ def getRiskNumber(data, filterLock, fieldGroup, popField, areaField, houseField,
 				
 	if aflag=='drawArea':
 
-		sum_tpl = '\
-			SUM(  \
-				case \
-					when ST_CoveredBy({atablename}wkb_geometry,{filterLock}) then {aggField} \
-					else st_area(st_intersection({atablename}wkb_geometry,{filterLock})) / st_area({atablename}wkb_geometry)*{aggField} \
-				end \
-			)'
+		if kwargs.get('proportional'):
+			sum_tpl = '\
+				SUM(  \
+					case \
+						when ST_CoveredBy({atablename}wkb_geometry,{filterLock}) then {aggField} \
+						else st_area(st_intersection({atablename}wkb_geometry,{filterLock})) / st_area({atablename}wkb_geometry)*{aggField} \
+					end \
+				)'
+			count_settl_tpl = '\
+				COUNT (DISTINCT \
+					CASE \
+						WHEN st_area(st_intersection(wkb_geometry,{filterLock})) / st_area(wkb_geometry)*area_sqm > 1 THEN {aggField} \
+						ELSE NULL \
+					END\
+				)'
+		else:
+			sum_tpl = 'SUM({aggField})'
+			count_settl_tpl = 'COUNT (DISTINCT {aggField})'
 
 		annotates = {'counter':Count('pk')}
 		if popField:
-			annotates[alias['pop']] =  RawSQL_nogroupby(sum_tpl.format(**{'atablename':atablename, 'filterLock':filterLock, 'aggField':popField}),[])
+			annotates[alias['pop']] = RawSQL_nogroupby(sum_tpl.format(**{'atablename':atablename, 'filterLock':filterLock, 'aggField':popField}),[])
 		if areaField:
-			annotates[alias['area']] =  RawSQL_nogroupby(sum_tpl.format(**{'atablename':atablename, 'filterLock':filterLock, 'aggField':areaField}),[])
+			annotates[alias['area']] = RawSQL_nogroupby(sum_tpl.format(**{'atablename':atablename, 'filterLock':filterLock, 'aggField':areaField}),[])
 		if houseField:
-			annotates[alias['building']] =  RawSQL_nogroupby(sum_tpl.format(**{'atablename':atablename, 'filterLock':filterLock, 'aggField':houseField}),[])
+			annotates[alias['building']] = RawSQL_nogroupby(sum_tpl.format(**{'atablename':atablename, 'filterLock':filterLock, 'aggField':houseField}),[])
 		if 'settlField' in kwargs:
-			annotates[alias['settlement']] = RawSQL_nogroupby('\
-			COUNT (DISTINCT \
-				CASE \
-					WHEN st_area(st_intersection(wkb_geometry,{filterLock})) / st_area(wkb_geometry)*area_sqm > 1 THEN {aggField} \
-					ELSE NULL \
-				END\
-			)'.format(**{'filterLock':filterLock,'aggField':kwargs['settlField']}),[])
+			annotates[alias['settlement']] = RawSQL_nogroupby(count_settl_tpl.format(**{'filterLock':filterLock,'aggField':kwargs['settlField']}),[])
 
 		counts = data.values(*fieldGroup).annotate(**annotates).extra(where = {'ST_Intersects(%swkb_geometry, %s)'%(atablename, filterLock)})
 
@@ -1124,4 +1070,3 @@ def getRiskNumber(data, filterLock, fieldGroup, popField, areaField, houseField,
 		counts = data.values(*fieldGroup).annotate(**annotates).extra(where = {'ST_Within(%swkb_geometry, %s)'%(atablename, filterLock)})
 	print linenum(), counts.query
 	return list(counts)     
-

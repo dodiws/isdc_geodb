@@ -127,6 +127,7 @@ class getProvince(ModelResource):
 		allowed_methods = ('get')
 		filtering = { "id" : ALL }
 		object_class=None
+        excludes = ['wkb_geometry']
 
 class BaselineStatisticResource(ModelResource):
 
@@ -277,13 +278,13 @@ def getBaselineStatistic(request,filterLock, flag, code, yy=None, mm=None, dd=No
 	# } for k in trans_order]
 
 	panels_list['charts'] = [{
-		'child':[{'value':chart['value'][i], 'title':t} for i,t in enumerate(chart['title'])],
-		'title':chart['charttitle'],
+		'child':[{'value':chart['values'][i], 'title':t} for i,t in enumerate(chart['labels'])],
+		'title':chart['title'],
 		'key':chart['key'],
 	} for chart in dict_ext(panels['charts']).valueslistbykey(['pop_lc','area_lc','building_lc','healthfacility','road'],addkeyasattr=True)+dict_ext(panels).valueslistbykey(['total'],addkeyasattr=True)]
 
 	panels_list['tables'] = [{
-		'child':[table['parentdata']]+[r['value'] for r in table['child']],
+		'child':[table['parentdata']]+[r['values'] for r in table['child']],
 		'title':table['title'],
 		'key':table['key'],
 	} for table in dict_ext(panels['tables']).valueslistbykey(['adm_lcgroup_pop_area','adm_healthfacility','adm_road'],addkeyasattr=True)]

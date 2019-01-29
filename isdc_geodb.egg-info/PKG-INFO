@@ -1,51 +1,45 @@
 Metadata-Version: 1.1
 Name: isdc-geodb
-Version: 0.1.dev0
-Summary: A mandatory Django app for ISDC. Process mapping data used by other modules.
+Version: 0.1.dev3
+Summary: Process base mapping data used by other modules.
 Home-page: https://www.example.com/
 Author: ASDC Dev
 Author-email: yourname@example.com
 License: BSD License
-Description: ========
-        APP_NAME
-        ========
+Description: =====
+        geodb
+        =====
         
-        APP_DESC
-        
+        Process base mapping data used by other modules.
         Mandatory Module for ASDC
         
         Quick start
         -----------
         
-        1. Add "APP_NAME" to your INSTALLED_APPS setting like this::
+        1. Add "geodb" to your ISDC_BASE_APPS setting like this::
         
-            INSTALLED_APPS = [
-                ...
-                'APP_NAME',
-            ]
+           ISDC_BASE_APPS = [
+               ...
+               'geodb',
+           ]
         
-            If necessary add "APP_NAME" in (check comment for description): 
-                DASHBOARD_PAGE_MODULES, 
-                GETRISKEXECUTEEXTERNAL_MODULES, 
-                QUICKOVERVIEW_MODULES, 
-                MAP_APPS_TO_DB_CUSTOM
+           If necessary add "geodb" in (check comment for description): 
+               QUICKOVERVIEW_MODULES, 
+               MAP_APPS_TO_DB_CUSTOM
         
-            For development in virtualenv add APP_NAME_PARENT_DIR path to venv_name/bin/activate:
-                export PYTHONPATH=${PYTHONPATH}:\
-                ${HOME}/APP_NAME_PARENT_DIR
+           For development in virtualenv add GEODB_PROJECT_DIR path to VENV_NAME/bin/activate:
+               export PYTHONPATH=${PYTHONPATH}:\
+               ${HOME}/GEODB_PROJECT_DIR
         
-        2. Include the APP_NAME URLconf in geonode/urls.py like this::
+        2. To create the geodb tables:
         
-            url('', include('APP_NAME.urls')),
-        
-        3. Run `python manage.py migrate APP_NAME` to create the APP_NAME models.
-        
+           python manage.py makemigrations
+           python manage.py migrate dashboard --database geodb
         
 Platform: UNKNOWN
 Classifier: Environment :: Web Environment
 Classifier: Framework :: Django
 Classifier: Framework :: Django :: 1.8
-Classifier: Intended Audience :: Developers, End Users
 Classifier: License :: OSI Approved :: BSD License
 Classifier: Operating System :: OS Independent
 Classifier: Programming Language :: Python

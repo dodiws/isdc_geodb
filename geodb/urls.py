@@ -11,6 +11,7 @@ from .geoapi import (
     getLastUpdatedStatus,
     # getLandslide
 )
+from .views import DemographicInfo, GeneralInfoVillages
 from django.conf.urls import include, patterns, url
 from tastypie.api import Api
 
@@ -27,6 +28,14 @@ geoapi.register(getProvince())
 geoapi.register(getVillages())
 geoapi.register(getLastUpdatedStatus())
 # geoapi.register(getLandslide())
+
+GETOVERVIEWMAPS_APIOBJ = [
+    DemographicInfo(),
+    GeneralInfoVillages(),
+]
+# getoverviewmaps_api = Api(api_name='getoverviewmaps')
+# for apiobj in getoverviewmaps_apiobj:
+#     getoverviewmaps_api.register(apiobj)
 
 urlpatterns_getoverviewmaps = patterns(
     'geodb.views',
@@ -47,8 +56,7 @@ urlpatterns_getoverviewmaps = patterns(
 )
 
 urlpatterns = [
-    # api
     url(r'', include(geoapi.urls)),
-
+    # url(r'^api/', include(getoverviewmaps_api.urls)),
     url(r'^getOverviewMaps/', include(urlpatterns_getoverviewmaps)),
 ]
